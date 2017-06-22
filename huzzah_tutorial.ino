@@ -46,11 +46,11 @@ AdafruitIO_Feed *buttonCommand = io.feed("button");
 void setup() {
   setupSerial();
   setupPins();
-//  setupHumiditySensor();
-//  connectToAdafruitIO();
+  setupHumiditySensor();
+  connectToAdafruitIO();
 
-//  runHumiditySensor();
-//  printHumidityReadings();
+  runHumiditySensor();
+  printHumidityReadings();
 //  sendReadingsToCloud();
 
 //  handleBatterySensing();
@@ -127,6 +127,7 @@ void connectToAdafruitIO() {
   while (io.status() < AIO_CONNECTED) {
     Serial.print(".");
     delay(500);
+   Serial.println(connectionStatus(io.status()));
   }
 
   // Connected
@@ -238,4 +239,35 @@ void handleButtonSensing() {
 
   last = current;
 }
+
+String connectionStatus ( int which )
+{
+    switch ( which )
+    {
+        case WL_CONNECTED:
+            return "Connected";
+            break;
+
+        case WL_NO_SSID_AVAIL:
+            return "Network not available";
+            break;
+
+        case WL_CONNECT_FAILED:
+            return "Wrong password";
+            break;
+
+        case WL_IDLE_STATUS:
+            return "Idle status";
+            break;
+
+        case WL_DISCONNECTED:
+            return "Disconnected";
+            break;
+
+        default:
+            return "Unknown";
+            break;
+    }
+}
+
 
