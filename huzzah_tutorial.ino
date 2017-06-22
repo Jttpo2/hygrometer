@@ -55,19 +55,20 @@ void loop() {
   String url = "/testwifi/index.html";
   Serial.print("Requesting URL: ");
   Serial.println(url);
-
+  
   // Send request to server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" + 
-    "Host: " + host + "\r\n" + 
-    "Connection: close\r\n\r\n");
-    delay(500);
-
-    // Read all of reply from server and print
-    while (client.available()) {
-      String line = client.readStringUntil('\r');
-      Serial.print(line);
+  "Host: " + host + "\r\n" + 
+  "Connection: close\r\n\r\n");
+  
+  delay(500);
+  
+  // Read all of reply from server and print
+  while (client.available()) {
+    String line = client.readStringUntil('\r');
+    Serial.print(line);
     }
-
+    
     Serial.println();
     Serial.println("Closing connection");
 
