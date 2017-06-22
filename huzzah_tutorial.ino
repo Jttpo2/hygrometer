@@ -102,10 +102,18 @@ void setupPins() {
 }
 
 void setupSerial() {
-  Serial.begin(115200);
+  Serial.begin(9600);
   while (!Serial) { }
   delay(100);
+  clearSerialBuffer();
   Serial.println("Serial connection initiated");
+}
+
+void clearSerialBuffer() {
+  while (Serial.available() > 0) {
+    Serial.read();
+  }
+  Serial.println();
 }
 
 void setupHumiditySensor() {
@@ -118,17 +126,7 @@ void connectToAdafruitIO() {
 //  Serial.setDebugOutput(true);
   
   Serial.print("Connecting to Adafruit IO");  
-
-  WiFi.setAutoReconnect(false);
-  
-  WiFi.persistent(false);
-  WiFi.mode(WIFI_OFF);
-  WiFi.mode(WIFI_STA);
-//  WiFi.flush();
-  
   io.connect();
-
-  
 
   // Message handler receives messages from adafruit.io
   humidityCommand->onMessage(handleMessage);
@@ -144,9 +142,10 @@ void connectToAdafruitIO() {
       Serial.println("Failed to connect to WiFi. Please verify credentials: ");
       delay(10000);
     }
-    
+
+    // Debugging connection
 //    WiFi.printDiag(Serial);
-       Serial.println(printConnectionStatusAdafruitIO(io.status()));
+//    Serial.println(printConnectionStatusAdafruitIO(io.status()));
   }
 
   // Connected
@@ -159,9 +158,7 @@ void connectToAdafruitIO() {
 }
 
 void disconnectWiFi() {
-  // Disconnecting wifi
-//  io.disconnect();
-  delay(100);
+  Serial.println("Disconnecting Wifi");
   WiFi.disconnect();
   delay(100);
 }
@@ -195,10 +192,6 @@ void printHumidityReadings() {
 }
 
 void sendReadingsToCloud() {
-  
-//  humidityCommand->save(80);
-//  temperatureCommand->save(100); 
-  
   Serial.print("Sending humidity -> ");
   Serial.println(humidity);
   humidityCommand->save(humidity);
@@ -249,6 +242,7 @@ void hibernate() {
   disconnectWiFi();
   Serial.println("Going to sleep");
   ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DEFAULT);
+  
   // Having the WAKE_RF_DISABLED leaves WiFi off when awakening
 //  ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DISABLED); 
 }
@@ -271,26 +265,20 @@ void handleButtonSensing() {
   last = current;
 }
 
-String printConnectionStatusAdafruitIO ( int which )
-{
-    switch ( which )
-    {
+String printConnectionStatusAdafruitIO ( int which ) {
+    switch ( which ) {
         case AIO_NET_CONNECTED:
             return "Connected";
             break;
-
         case AIO_NET_CONNECT_FAILED:
             return "Wrong password";
             break;
-
         case AIO_IDLE:
             return "Idle status";
             break;
-
         case AIO_NET_DISCONNECTED:
             return "Disconnected";
             break;
-
         default:
             return "Unknown";
             break;
