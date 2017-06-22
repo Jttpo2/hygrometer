@@ -37,8 +37,6 @@ float temperature;
 int current = LOW;
 int last = HIGH;
 
-const char* host = "wifitest.adafruit.com";
-
 // Adafruit feeds
 AdafruitIO_Feed *humidityCommand = io.feed("humidity");
 AdafruitIO_Feed *temperatureCommand = io.feed("temperature");
@@ -48,17 +46,21 @@ AdafruitIO_Feed *buttonCommand = io.feed("button");
 void setup() {
   setupSerial();
   setupPins();
-  setupHumiditySensor();
+//  setupHumiditySensor();
 //  connectToAdafruitIO();
-//
-  runHumiditySensor();
-  printHumidityReadings();
+
+//  runHumiditySensor();
+//  printHumidityReadings();
 //  sendReadingsToCloud();
 
 //  handleBatterySensing();
-//
+
+//  handleButtonSensing();
+//  sendButtonStatusToCloud();
+
+
 //  delay(5*1000);
-  hibernate();
+//  hibernate();
 }
 
 // Sketch restarts after sleep, so loop() never runs
@@ -91,23 +93,25 @@ void handleMessage(AdafruitIO_Data *data) {
 }
 
 void setupPins() {
-  Serial.println("Setting up pins");
+  Serial.print("Setting up pins... ");
   pinMode(ONBOARD_LED_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(HUMIDITY_SENSOR_PIN, INPUT);
+  Serial.println("Done.");
 }
 
 void setupSerial() {
   Serial.begin(115200);
   while (!Serial) { }
-  delay(50);
+  delay(100);
   Serial.println("Serial connection initiated");
 }
 
 void setupHumiditySensor() {
-  Serial.println("Initializing DHT sensor");
+  Serial.print("Initializing DHT sensor... ");
   dht.begin();
+  Serial.println("Done.");
 }
 
 void connectToAdafruitIO() {
