@@ -51,7 +51,7 @@ void setup() {
 
   runHumiditySensor();
   printHumidityReadings();
-//  sendReadingsToCloud();
+  sendReadingsToCloud();
 
 //  handleBatterySensing();
 
@@ -60,7 +60,7 @@ void setup() {
 
 
 //  delay(5*1000);
-//  hibernate();
+  hibernate();
 }
 
 // Sketch restarts after sleep, so loop() never runs
@@ -115,8 +115,20 @@ void setupHumiditySensor() {
 }
 
 void connectToAdafruitIO() {
+//  Serial.setDebugOutput(true);
+  
   Serial.print("Connecting to Adafruit IO");  
+
+  WiFi.setAutoReconnect(false);
+  
+  WiFi.persistent(false);
+  WiFi.mode(WIFI_OFF);
+  WiFi.mode(WIFI_STA);
+//  WiFi.flush();
+  
   io.connect();
+
+  
 
   // Message handler receives messages from adafruit.io
   humidityCommand->onMessage(handleMessage);
@@ -127,7 +139,14 @@ void connectToAdafruitIO() {
   while (io.status() < AIO_CONNECTED) {
     Serial.print(".");
     delay(500);
-   Serial.println(connectionStatus(io.status()));
+
+    if (io.status() == AIO_NET_CONNECT_FAILED) {
+      Serial.println("Failed to connect to WiFi. Please verify credentials: ");
+      delay(10000);
+    }
+    
+//    WiFi.printDiag(Serial);
+       Serial.println(printConnectionStatusAdafruitIO(io.status()));
   }
 
   // Connected
@@ -137,6 +156,14 @@ void connectToAdafruitIO() {
   Serial.println(WiFi.localIP());
 
   io.run();
+}
+
+void disconnectWiFi() {
+  // Disconnecting wifi
+//  io.disconnect();
+  delay(100);
+  WiFi.disconnect();
+  delay(100);
 }
 
 void blinkPin(int pin) {
@@ -218,8 +245,12 @@ void sendButtonStatusToCloud() {
 }
 
 void hibernate() {
+  // Remember to connect pins 16 and RST to let huzzah wake from deep sleep
+  disconnectWiFi();
   Serial.println("Going to sleep");
-  ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DISABLED); 
+  ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DEFAULT);
+  // Having the WAKE_RF_DISABLED leaves WiFi off when awakening
+//  ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DISABLED); 
 }
 
 void handleButtonSensing() {
@@ -240,27 +271,23 @@ void handleButtonSensing() {
   last = current;
 }
 
-String connectionStatus ( int which )
+String printConnectionStatusAdafruitIO ( int which )
 {
     switch ( which )
     {
-        case WL_CONNECTED:
+        case AIO_NET_CONNECTED:
             return "Connected";
             break;
 
-        case WL_NO_SSID_AVAIL:
-            return "Network not available";
-            break;
-
-        case WL_CONNECT_FAILED:
+        case AIO_NET_CONNECT_FAILED:
             return "Wrong password";
             break;
 
-        case WL_IDLE_STATUS:
+        case AIO_IDLE:
             return "Idle status";
             break;
 
-        case WL_DISCONNECTED:
+        case AIO_NET_DISCONNECTED:
             return "Disconnected";
             break;
 
