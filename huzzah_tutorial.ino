@@ -1,5 +1,16 @@
+#define IO_USERNAME   "Jttpo2"
+#define IO_KEY        "269663b829ae4fa8b3c1f8354cff7cd5"
+
+#define WIFI_SSID     "SissyStrut Guest"
+#define WIFI_PASS     "Internet!"
+
+#include "AdafruitIO_WiFi.h"
+AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
+
 #include <ESP8266WiFi.h>
-#include <ESP8266WiFiMulti.h>
+#include <AdafruitIO.h>
+#include <Adafruit_MQTT.h>
+#include <ArduinoHttpClient.h>
 
 #define ONBOARD_LED_PIN 0
 #define LED_PIN 13
@@ -9,44 +20,44 @@
 int current = LOW;
 int last = HIGH;
 
-const char* ssid      = "SissyStrut Guest"; 
-const char* password  = "Internet!";
-
 const char* host = "wifitest.adafruit.com";
 
-//ESP8266WiFiMulti WiFiMulti;
+// Adafruit command feed
+AdafruitIO_Feed *command = io.feed("command");
 
 void setup() {
   pinMode(ONBOARD_LED_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
   pinMode(BUTTON_PIN, INPUT_PULLUP);
 
-//  Serial.begin(115200);
-//  delay(100);
-//
-//  //  WiFiMulti.addAP("SissyStrut Guest", "Internet!");
-//
-//  Serial.println();
-//  Serial.print("Connecting to: "); 
-//  Serial.println(ssid);
-//  
-//  WiFi.begin(ssid, password);
-//
-//  while (WiFi.status() != WL_CONNECTED) {
-//    delay(500);
-//    Serial.print("."); 
-//  }
-//
-//  Serial.println();
-//  Serial.println("Wifi connected");
-//  Serial.println("IP: ");
-//  Serial.println(WiFi.localIP());
+  Serial.begin(115200);
+  delay(50);
+
+  Serial.print("Connecting to Adafruit IO");
+  io.connect();
+
+  // Message handler receives messages from adafruit.io
+  command->onMessage(handleMessage);
+
+  // Wait for connection
+  while(io.status() < AIO_CONNECTED) {
+    Serial.print(".");
+    delay(500);
+  }
+
+  // Connected
   
+  Serial.println();
+  Serial.println(io.statusText());
+  Serial.print("Local IP: ");
+  Serial.println(WiFi.localIP());
 }
 
-int value = 0;
-
 void loop() {
+  // Required at the top to keep talking to io.adafruit.com
+  io.run();
+  
+  // Read button
   if (digitalRead(BUTTON_PIN) == LOW) {
     current = HIGH; 
   } else {
@@ -57,50 +68,41 @@ void loop() {
     return;
   }
 
+  // Save button state to command feed on adafruit io
+  Serial.print("Sending button -> ");
+  Serial.println(current);
+  command->save(current);
+
+  // Show state with LED
   digitalWrite(LED_PIN, current);
 
   last = current;
-  
-//  delay(5000);
-//  value++;
-//
-//  Serial.print("Connecting to : ");
-//  Serial.println(host);
-//
-//  WiFiClient client;
-//  const int httpPort = 80;
-//  if (!client.connect(host, httpPort)) {
-//    Serial.println("Connection failed");
-//    return;
-//  }
-//
-//  String url = "/testwifi/index.html";
-//  Serial.print("Requesting URL: ");
-//  Serial.println(url);
-//  
-//  // Send request to server
-//  client.print(String("GET ") + url + " HTTP/1.1\r\n" + 
-//  "Host: " + host + "\r\n" + 
-//  "Connection: close\r\n\r\n");
-//  
-//  delay(500);
-//  
-//  // Read all of reply from server and print
-//  while (client.available()) {
-//    String line = client.readStringUntil('\r');
-//    Serial.print(line);
-//    }
-//    
-//    Serial.println();
-//    Serial.println("Closing connection");
-//
-//    delay(5000);
+}
+
+void handleMessage(AdafruitIO_Data *data) {
+  int command = data->toInt();
+
+  if (command == 1) {
+    Serial.print("received <- ");
+    Serial.println(command);
+    blinkLED();
+  } else {
+    Serial.print("received <- ");
+    Serial.println(command);
+  }
+}
+
+void blinkPin(int pin) {
+  digitalWrite(pin, HIGH);
+  delay(500);
+  digitalWrite(pin, LOW);  
+}
+
+void blinkOnboardLED() {
+  blinkPin(ONBOARD_LED_PIN);
 }
 
 void blinkLED() {
-  digitalWrite(LED_PIN, HIGH);
-  delay(500);
-  digitalWrite(LED_PIN, LOW);
-  delay(500);  
+  blinkPin(LED_PIN);
 }
 
