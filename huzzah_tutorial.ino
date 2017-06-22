@@ -57,19 +57,21 @@ void loop() {
   Serial.println(url);
 
   // Send request to server
-//  client.print(String("GET ") + url + " HTTP/1.1\r\n" + 
-//    "Host: " + host + "\r\n" + 
-//    "Connection: close\r\n\r\n");
-//    delay(500);
-//
-//    // Read all of reply from server and print
-//    while (client.available()) {
-//      String line = client.readStringUntil('\r');
-//      Serial.print(line);
-//    }
-//
-//    Serial.println();
-//    Serial.println("Closing connection");
+  client.print(String("GET ") + url + " HTTP/1.1\r\n" + 
+    "Host: " + host + "\r\n" + 
+    "Connection: close\r\n\r\n");
+    delay(500);
+
+    // Read all of reply from server and print
+    while (client.available()) {
+      String line = client.readStringUntil('\r');
+      Serial.print(line);
+    }
+
+    Serial.println();
+    Serial.println("Closing connection");
+
+    delay(5000);
 }
 
 void blinkLED() {
