@@ -16,8 +16,8 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 
 #include <EEPROM.h>
 
-#define BATTERY_INTERVAL 10e6 //
-#define SLEEP_LENGTH 10e6
+#define BATTERY_INTERVAL  60 * 1e6 //
+#define SLEEP_LENGTH      60 * 1e6
 
 #include <DHT.h>
 
@@ -57,7 +57,6 @@ void setup() {
 
 //  handleButtonSensing();
 //  sendButtonStatusToCloud();
-
 
 //  delay(5*1000);
   hibernate();
