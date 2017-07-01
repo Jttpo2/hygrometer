@@ -165,13 +165,13 @@ void printHumidityReadings() {
   Serial.print("%, Temp: ");
   Serial.print(temperature);
   Serial.print(humidity);
-  Serial.println(" C");
+  Serial.println("C");
 }
 
 void printBatteryLevelReading() {
   Serial.print("Battery level: ");
   Serial.print(batteryLevel);
-  Serial.println(" %");
+  Serial.println("%");
 }
 
 void sendReadingsToCloud() {
