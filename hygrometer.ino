@@ -31,8 +31,7 @@ float humidity;
 float temperature; 
 float batteryLevel;
 
-#define ONBOARD_LED_PIN 0
-#define LED_PIN 13
+//#define LED_PIN 13
 
 // Adafruit feeds
 AdafruitIO_Feed *humidityCommand = io.feed("humidity");
@@ -71,8 +70,7 @@ void handleMessage(AdafruitIO_Data *data) {
 
 void setupPins() {
   Serial.print("Setting up pins... ");
-  pinMode(ONBOARD_LED_PIN, OUTPUT);
-  pinMode(LED_PIN, OUTPUT);
+//  pinMode(LED_PIN, OUTPUT);
   pinMode(HUMIDITY_SENSOR_PIN, INPUT);
   Serial.println("Done.");
 }
@@ -130,7 +128,7 @@ boolean connectToAdafruitIO() {
   }
 
   // Connected
-  Serial.println();
+//  Serial.println();
   Serial.println(io.statusText());
   Serial.print("Local IP: ");
   Serial.println(WiFi.localIP());
@@ -146,13 +144,9 @@ void blinkPin(int pin) {
   digitalWrite(pin, LOW);
 }
 
-void blinkOnboardLED() {
-  blinkPin(ONBOARD_LED_PIN);
-}
-
-void blinkLED() {
-  blinkPin(LED_PIN);
-}
+//void blinkLED() {
+//  blinkPin(LED_PIN);
+//}
 
 void runHumiditySensor() {
   humidity = dht.readHumidity();
