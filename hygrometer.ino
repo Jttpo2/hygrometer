@@ -14,10 +14,11 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 #include <Adafruit_MQTT.h>
 #include <ArduinoHttpClient.h>
 
-#include <EEPROM.h>
+#define SLEEP_LENGTH          60 * 1e6 // Hibernation length in macroseconds
+#define MAX_CONNECTION_TIME   8 * 1e3 // WiFi connection timeout in millis
+boolean keepTryingToConnect = true; // For WiFi connection timeout
+long connectionStartTime = 0;
 
-//#define BATTERY_INTERVAL  60 * 1e6 //
-#define SLEEP_LENGTH        60 * 1e6
 
 #include <DHT.h>
 
@@ -25,29 +26,18 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 #define DHTTYPE DHT22
 DHT dht(HUMIDITY_SENSOR_PIN, DHTTYPE);
 
-// Humidity variables
+// Sensor variables
 float humidity;
 float temperature; 
-
 float batteryLevel;
 
 #define ONBOARD_LED_PIN 0
 #define LED_PIN 13
-#define BUTTON_PIN 4
-
-// Button state
-int current = LOW;
-int last = HIGH;
 
 // Adafruit feeds
 AdafruitIO_Feed *humidityCommand = io.feed("humidity");
 AdafruitIO_Feed *temperatureCommand = io.feed("temperature");
-AdafruitIO_Feed *buttonCommand = io.feed("button");
 AdafruitIO_Feed *batteryCommand = io.feed("battery");
-
-#define MAX_CONNECTION_TIME 7 * 1e3 // WiFi connection timeout in millis
-boolean keepTryingToConnect = true; // For WiFi connection timeout
-long connectionStartTime = 0;
 
 // Sketch restarts after sleep, so loop() never runs
 void setup() {
@@ -62,59 +52,34 @@ void setup() {
   runHumiditySensor();
   printHumidityReadings();
 
-  handleBatterySensing();
+  runBatterySensor();
   printBatteryLevelReading();
   
   sendReadingsToCloud();
 
-//  handleButtonSensing();
-//  sendButtonStatusToCloud();
-
-//  delay(5*1000);
   hibernate();
 }
 
 // Sketch restarts after sleep, so loop() never runs
-void loop() {
-  // Required at the top to keep talking to io.adafruit.com
-//  io.run();
-//
-//  runHumiditySensor();
-//  printHumidityReadings();
-//  sendReadingsToCloud();
-//
-//  handleButtonSensing();
-//  sendButtonStatusToCloud();
-
-//  delay(5000);
-}
+void loop() {}
 
 void handleMessage(AdafruitIO_Data *data) {
   int command = data->toInt();
-//  if (command == 1) {
-//    Serial.print("received <- ");
-//    Serial.println(command);
-//    blinkLED();
-//  } else {
     Serial.print("received <- ");
     Serial.println(command);
-
-//    Serial.println(data);
-//  }
 }
 
 void setupPins() {
   Serial.print("Setting up pins... ");
   pinMode(ONBOARD_LED_PIN, OUTPUT);
   pinMode(LED_PIN, OUTPUT);
-  pinMode(BUTTON_PIN, INPUT_PULLUP);
   pinMode(HUMIDITY_SENSOR_PIN, INPUT);
   Serial.println("Done.");
 }
 
 void setupSerial() {
   Serial.begin(9600);
-  while (!Serial) { }
+  while (!Serial) { } // Wait while initializing
   delay(100);
   clearSerialBuffer();
   Serial.println("Serial connection initiated");
@@ -142,7 +107,6 @@ boolean connectToAdafruitIO() {
   // Message handler receives messages from adafruit.io
   humidityCommand->onMessage(handleMessage);
   temperatureCommand->onMessage(handleMessage);
-  buttonCommand->onMessage(handleMessage);
   batteryCommand->onMessage(handleMessage);
 
   // Wait for connection
@@ -150,15 +114,9 @@ boolean connectToAdafruitIO() {
   while (io.status() < AIO_CONNECTED && keepTryingToConnect) {
     Serial.print(".");
     
-
-//    if (io.status() == AIO_NET_CONNECT_FAILED) {
-//      Serial.println("Failed to connect to WiFi. Please verify credentials: ");
-//      delay(10000);
-//    }
-
     // Debugging connection
-//    WiFi.printDiag(Serial);
-//    Serial.println(printConnectionStatusAdafruitIO(io.status()));
+    // WiFi.printDiag(Serial);
+    // Serial.println(printConnectionStatusAdafruitIO(io.status()));
 
     checkConnectionTimer();
     if(keepTryingToConnect) {
@@ -180,12 +138,6 @@ boolean connectToAdafruitIO() {
   io.run();
 
   return true;
-}
-
-void disconnectWiFi() {
-  Serial.println("Disconnecting Wifi");
-  WiFi.disconnect();
-  delay(100);
 }
 
 void blinkPin(int pin) {
@@ -236,26 +188,6 @@ void sendReadingsToCloud() {
   batteryCommand->save(batteryLevel);
 }
 
-void handleBatterySensing() {
-   EEPROM.begin(512);
-
-  // Get current count position from eeprom
-  byte battery_count = EEPROM.read(0);
-
-  // Use eeprom to track battery count between resets
-//  if (battery_count >= (BATTERY_INTERVAL / SLEEP_LENGTH)) {
-    // Reset counter
-//    battery_count = 0;
-    runBatterySensor();
-//  } else {
-//    battery_count++;
-//  }
-
-  // Save current count
-  EEPROM.write(0, battery_count);
-  EEPROM.commit();
-}
-
 void runBatterySensor() {
   Serial.println("Reading battery level");
   float level = analogRead(A0);
@@ -270,39 +202,13 @@ void runBatterySensor() {
   batteryLevel = map(level, 766.25, 1023, 0, 100); 
 }
 
-void sendButtonStatusToCloud() {
-   // Save button state to command feed on adafruit io
-  Serial.print("Sending button -> ");
-  Serial.println(current);
-  buttonCommand->save(current);
-}
-
 void hibernate() {
   // Remember to connect pins 16 and RST to let huzzah wake from deep sleep
-//  disconnectWiFi();
   Serial.println("Going to sleep");
   ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DEFAULT);
   
   // Having the WAKE_RF_DISABLED leaves WiFi off when awakening
 //  ESP.deepSleep(SLEEP_LENGTH, WAKE_RF_DISABLED); 
-}
-
-void handleButtonSensing() {
-  // Read button
-  if (digitalRead(BUTTON_PIN) == LOW) {
-    current = HIGH;
-  } else {
-    current = LOW;
-  }
-
-  if (current == last) {
-    return;
-  }
-
-  // Show state with LED
-  digitalWrite(LED_PIN, current);
-
-  last = current;
 }
 
 String printConnectionStatusAdafruitIO ( int which ) {
