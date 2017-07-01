@@ -14,7 +14,7 @@ AdafruitIO_WiFi io(IO_USERNAME, IO_KEY, WIFI_SSID, WIFI_PASS);
 #include <Adafruit_MQTT.h>
 #include <ArduinoHttpClient.h>
 
-#define SLEEP_LENGTH          60 * 1e6 // Hibernation length in macroseconds
+#define SLEEP_LENGTH          60 * 1e6 // Hibernation length in microseconds
 #define MAX_CONNECTION_TIME   8 * 1e3 // WiFi connection timeout in millis
 boolean keepTryingToConnect = true; // For WiFi connection timeout
 long connectionStartTime = 0;
